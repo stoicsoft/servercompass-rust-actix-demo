@@ -1,17 +1,16 @@
-FROM rust:1.83-slim AS builder
+FROM node:20-alpine AS deps
 WORKDIR /app
+COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
+RUN if [ -f yarn.lock ]; then yarn install --frozen-lockfile; \
+  elif [ -f package-lock.json ]; then npm ci; \
+  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
+  else echo "Lockfile not found." && npm install; \
+  fi
 
-RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
-
+FROM node:20-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN cargo build --release
-
-FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
-WORKDIR /app
-
-COPY --from=builder /app/target/release/ /tmp/build/
-RUN find /tmp/build -maxdepth 1 -type f -executable ! -name ".*" ! -name "*.d" | head -1 | xargs -I{} cp {} ./server && rm -rf /tmp/build
-
 EXPOSE 3000
-CMD ["./server"]
+CMD ["npm", "start"]
