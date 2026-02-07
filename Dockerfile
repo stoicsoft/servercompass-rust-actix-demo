@@ -1,6 +1,8 @@
 FROM rust:1.83-slim AS builder
 WORKDIR /app
 
+ENV CARGO_BUILD_JOBS=2
+
 COPY . .
 RUN cargo build --release
 
