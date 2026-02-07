@@ -148,14 +148,22 @@ jobs:
               '    restart: unless-stopped' \
               > docker-compose.yml
 
-            # Create .env (prefer Server Compass-managed secret; fallback to empty file)
+            # Create .env (prefer Server Compass-managed secret; fallback to existing server file)
             if [ -n "${{ secrets.ENV_FILE_SERVERCOMPASS_RUST_ACTIX_DEMO }}" ]; then
               echo "🧩 Writing .env from GitHub secret (ENV_FILE_SERVERCOMPASS_RUST_ACTIX_DEMO)..."
-              printf '%s\n' "${{ secrets.ENV_FILE_SERVERCOMPASS_RUST_ACTIX_DEMO }}" > .env
+            cat > .env << 'SERVER_COMPASS_ENV_FILE'
+            ${{ secrets.ENV_FILE_SERVERCOMPASS_RUST_ACTIX_DEMO }}
+            SERVER_COMPASS_ENV_FILE
+            elif [ -f .env ]; then
+              echo "🧩 No env secret found. Keeping existing .env from server."
             else
-              echo "🧩 No env secret found. Creating empty .env..."
+              echo "🧩 No env secret found and .env is missing. Creating empty .env..."
               touch .env
             fi
+
+            # Lightweight sanity check (count only; never print values)
+            ENV_VAR_COUNT=$(grep -Ec '^[A-Za-z_][A-Za-z0-9_]*=' .env 2>/dev/null || true)
+            echo "🧩 .env variables loaded: ${ENV_VAR_COUNT}"
 
             # Log in to GHCR
             echo "🔐 Logging in to GitHub Container Registry..."
