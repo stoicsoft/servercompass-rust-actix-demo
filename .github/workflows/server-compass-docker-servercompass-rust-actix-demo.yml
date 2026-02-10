@@ -146,9 +146,9 @@ jobs:
               '    image: ghcr.io/${{ github.repository }}:latest' \
               '    container_name: servercompass-rust-actix-demo-app' \
               '    ports:' \
-              '      - "3000:8080"' \
+              '      - "3001:3000"' \
               '    environment:' \
-              '      PORT: "${PORT:-8080}"' \
+              '      PORT: "${PORT:-3000}"' \
               '    env_file:' \
               '      - .env' \
               '    restart: unless-stopped' \
